@@ -1,0 +1,8 @@
+:root { font-family: system-ui, Avenir, Helvetica, Arial, sans-serif; }
+body { margin: 0; min-width: 320px; }
+a { color: #2563eb; text-decoration: none; }
+a:hover { text-decoration: underline; }
+.container { max-width: 960px; margin: 24px auto; padding: 0 16px; }
+button { background:#111827; color:#fff; border:0; padding:8px 12px; border-radius:6px; cursor:pointer }
+button:hover { background:#1f2937 }
+input, textarea { border:1px solid #d1d5db; border-radius:6px; padding:8px }
