@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # AI Study Assistant
 
 A modern, AI-powered study application built with React and Django.
@@ -81,12 +82,6 @@ npm run dev
    - Create flashcards
 4. Track your learning progress
 
-## Security Notes
-
-- Never commit your `.env` file to version control
-- Keep your OpenAI API key secure
-- The `.env` file is already included in `.gitignore`
-
 ## API Endpoints
 
 - `GET /api/notes/` - List all notes
@@ -98,13 +93,5 @@ npm run dev
 - `POST /api/notes/{id}/submit-quiz/` - Submit quiz answers
 - `POST /api/notes/{id}/flashcard-reviewed/` - Mark flashcard as reviewed
 
-## Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
 
-## License
-
-This project is open source and available under the MIT License.
