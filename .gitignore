@@ -23,6 +23,10 @@ wheels/
 .installed.cfg
 *.egg
 MANIFEST
+venv/
+.venv/
+env/
+.env/
 
 # Django
 *.log
