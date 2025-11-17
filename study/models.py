@@ -1,8 +1,10 @@
 from django.db import models
 from django.utils import timezone
+from django.contrib.auth.models import User
 
 
 class Note(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notes', null=True, blank=True)
     title = models.CharField(max_length=255)
     original_text = models.TextField(blank=True)
     uploaded_file = models.FileField(upload_to="notes/", blank=True, null=True)
@@ -49,7 +51,7 @@ class Flashcard(models.Model):
 
 class StudyProgress(models.Model):
     note = models.ForeignKey(Note, related_name="progress_entries", on_delete=models.CASCADE)
-    # Anonymous progress (no auth). Could later add user relation.
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='study_progress', null=True, blank=True)
     completed_quiz_questions = models.PositiveIntegerField(default=0)
     correct_quiz_answers = models.PositiveIntegerField(default=0)
     flashcards_reviewed = models.PositiveIntegerField(default=0)

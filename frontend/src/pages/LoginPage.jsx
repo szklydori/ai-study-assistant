@@ -1,19 +1,27 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { login } from '../api'
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const navigate = useNavigate()
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
-    // TODO: Implement login logic
-    setTimeout(() => {
+    setError('')
+
+    try {
+      await login({ username, password })
+      navigate('/notes')
+    } catch (err) {
+      setError(err.response?.data?.error || 'Login failed. Please check your credentials.')
+    } finally {
       setLoading(false)
-      alert('Login functionality will be implemented with backend authentication')
-    }, 1000)
+    }
   }
 
   return (
@@ -26,18 +34,24 @@ export default function LoginPage() {
 
         <div className="card p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                {error}
+              </div>
+            )}
+
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                Email Address
+              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
+                Username
               </label>
               <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                id="username"
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 required
                 className="input-field"
-                placeholder="you@example.com"
+                placeholder="Enter your username"
               />
             </div>
 

@@ -37,6 +37,8 @@ ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
     'rest_framework',
+    'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
     'study',
     'django.contrib.admin',
@@ -143,18 +145,32 @@ STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+from datetime import timedelta
+
 if DEBUG:
     REST_FRAMEWORK = {
         'DEFAULT_RENDERER_CLASSES': [
             'rest_framework.renderers.JSONRenderer',
             'rest_framework.renderers.BrowsableAPIRenderer',
         ],
-        'DEFAULT_AUTHENTICATION_CLASSES': [],
+        'DEFAULT_AUTHENTICATION_CLASSES': [
+            'rest_framework_simplejwt.authentication.JWTAuthentication',
+        ],
         'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.AllowAny'],
     }
 else:
     REST_FRAMEWORK = {
         'DEFAULT_RENDERER_CLASSES': ['rest_framework.renderers.JSONRenderer'],
-        'DEFAULT_AUTHENTICATION_CLASSES': [],
+        'DEFAULT_AUTHENTICATION_CLASSES': [
+            'rest_framework_simplejwt.authentication.JWTAuthentication',
+        ],
         'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.AllowAny'],
     }
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+}

@@ -1,6 +1,30 @@
-import { Link, Outlet } from 'react-router-dom'
+import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { getUser, isAuthenticated, logout } from '../api'
 
 export default function Layout() {
+  const [user, setUser] = useState(null)
+  const navigate = useNavigate()
+  const location = useLocation()
+
+  useEffect(() => {
+    const checkAuth = () => {
+      if (isAuthenticated()) {
+        setUser(getUser())
+      } else {
+        setUser(null)
+      }
+    }
+    
+    checkAuth()
+  }, [location])
+
+  const handleLogout = async () => {
+    await logout()
+    setUser(null)
+    navigate('/login')
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
       <nav className="border-b border-gray-200 bg-white sticky top-0 z-50">
@@ -22,18 +46,29 @@ export default function Layout() {
               >
                 Create
               </Link>
-              <Link
-                to="/profile"
-                className="text-gray-600 hover:text-gray-900 font-medium transition-colors"
-              >
-                Profile
-              </Link>
-              <Link
-                to="/login"
-                className="btn-secondary text-sm"
-              >
-                Sign In
-              </Link>
+              {user ? (
+                <>
+                  <Link
+                    to="/profile"
+                    className="btn-secondary text-sm"
+                  >
+                    Account
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="text-gray-600 hover:text-gray-900 font-medium transition-colors text-sm"
+                  >
+                    Sign Out
+                  </button>
+                </>
+              ) : (
+                <Link
+                  to="/login"
+                  className="btn-secondary text-sm"
+                >
+                  Sign In
+                </Link>
+              )}
             </div>
           </div>
         </div>

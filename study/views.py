@@ -1,6 +1,6 @@
 import os
 from django.shortcuts import get_object_or_404
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.response import Response
@@ -21,11 +21,23 @@ from .ai import summarize_text, generate_quiz, generate_flashcards
 class NoteViewSet(viewsets.ModelViewSet):
     queryset = Note.objects.all().order_by("-created_at")
     parser_classes = (MultiPartParser, FormParser, JSONParser)
+    permission_classes = [permissions.AllowAny]  # Allow unauthenticated access
+
+    def get_queryset(self):
+        queryset = Note.objects.all().order_by("-created_at")
+        # Filter by authenticated user if logged in
+        if self.request.user.is_authenticated:
+            queryset = queryset.filter(user=self.request.user)
+        return queryset
 
     def get_serializer_class(self):
         if self.action in {"create", "update", "partial_update"}:
             return NoteCreateSerializer
         return NoteSerializer
+
+    def perform_create(self, serializer):
+        # Automatically assign the note to the current user
+        serializer.save(user=self.request.user if self.request.user.is_authenticated else None)
 
     @action(detail=True, methods=["post"], url_path="summarize")
     def summarize(self, request, pk=None):
@@ -96,7 +108,10 @@ class NoteViewSet(viewsets.ModelViewSet):
             if str(qq.id) in submitted and str(submitted[str(qq.id)]).upper()[:1] == qq.correct_option:
                 correct += 1
 
-        progress, _ = StudyProgress.objects.get_or_create(note=note)
+        progress, _ = StudyProgress.objects.get_or_create(
+            note=note,
+            user=request.user if request.user.is_authenticated else None
+        )
         progress.completed_quiz_questions += total
         progress.correct_quiz_answers += correct
         progress.save()
@@ -111,7 +126,10 @@ class NoteViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"], url_path="flashcard-reviewed")
     def flashcard_reviewed(self, request, pk=None):
         note = self.get_object()
-        progress, _ = StudyProgress.objects.get_or_create(note=note)
+        progress, _ = StudyProgress.objects.get_or_create(
+            note=note,
+            user=request.user if request.user.is_authenticated else None
+        )
         progress.flashcards_reviewed += 1
         progress.save()
         return Response(StudyProgressSerializer(progress).data)
@@ -120,6 +138,14 @@ class NoteViewSet(viewsets.ModelViewSet):
 class ProgressViewSet(viewsets.ModelViewSet):
     queryset = StudyProgress.objects.all().order_by("-last_interaction_at")
     serializer_class = StudyProgressSerializer
+    permission_classes = [permissions.AllowAny]  # Allow unauthenticated access
+
+    def get_queryset(self):
+        queryset = StudyProgress.objects.all().order_by("-last_interaction_at")
+        # Filter by authenticated user if logged in
+        if self.request.user.is_authenticated:
+            queryset = queryset.filter(user=self.request.user)
+        return queryset
 
 
 # Create your views here.

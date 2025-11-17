@@ -1,14 +1,19 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { register } from '../api'
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
-    name: '',
+    username: '',
     email: '',
+    first_name: '',
+    last_name: '',
     password: '',
-    confirmPassword: ''
+    password2: ''
   })
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const navigate = useNavigate()
 
   const handleChange = (e) => {
     setFormData({
@@ -19,16 +24,44 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (formData.password !== formData.confirmPassword) {
-      alert('Passwords do not match')
+    setError('')
+
+    if (formData.password !== formData.password2) {
+      setError('Passwords do not match')
       return
     }
+
     setLoading(true)
-    // TODO: Implement registration logic
-    setTimeout(() => {
+
+    try {
+      const { username, email, first_name, last_name, password, password2 } = formData
+      await register({ username, email, first_name, last_name, password, password2 })
+      navigate('/notes')
+    } catch (err) {
+      console.error('Registration error:', err)
+      const errorData = err.response?.data
+      
+      if (err.code === 'ERR_NETWORK' || err.message?.includes('Network')) {
+        setError('Cannot connect to server. Please make sure the backend is running.')
+      } else if (typeof errorData === 'object' && errorData !== null) {
+        // Handle Django REST Framework validation errors
+        const errorMessages = Object.entries(errorData)
+          .map(([key, value]) => {
+            if (Array.isArray(value)) {
+              return `${key}: ${value.join(', ')}`
+            }
+            return `${key}: ${value}`
+          })
+          .join('; ')
+        setError(errorMessages || 'Registration failed. Please check your input.')
+      } else if (errorData) {
+        setError(errorData)
+      } else {
+        setError(err.message || 'Registration failed. Please try again.')
+      }
+    } finally {
       setLoading(false)
-      alert('Registration functionality will be implemented with backend authentication')
-    }, 1000)
+    }
   }
 
   return (
@@ -41,19 +74,55 @@ export default function RegisterPage() {
 
         <div className="card p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                {error}
+              </div>
+            )}
+
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                Full Name
+              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
+                Username
               </label>
               <input
-                id="name"
-                name="name"
+                id="username"
+                name="username"
                 type="text"
-                value={formData.name}
+                value={formData.username}
                 onChange={handleChange}
                 required
                 className="input-field"
-                placeholder="John Doe"
+                placeholder="Enter your username"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="first_name" className="block text-sm font-medium text-gray-700 mb-2">
+                First Name
+              </label>
+              <input
+                id="first_name"
+                name="first_name"
+                type="text"
+                value={formData.first_name}
+                onChange={handleChange}
+                className="input-field"
+                placeholder="Enter your first name"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="last_name" className="block text-sm font-medium text-gray-700 mb-2">
+                Last Name
+              </label>
+              <input
+                id="last_name"
+                name="last_name"
+                type="text"
+                value={formData.last_name}
+                onChange={handleChange}
+                className="input-field"
+                placeholder="Enter your last name"
               />
             </div>
 
@@ -69,7 +138,7 @@ export default function RegisterPage() {
                 onChange={handleChange}
                 required
                 className="input-field"
-                placeholder="you@example.com"
+                placeholder="Enter your email address"
               />
             </div>
 
@@ -86,19 +155,19 @@ export default function RegisterPage() {
                 required
                 minLength={8}
                 className="input-field"
-                placeholder="At least 8 characters"
+                placeholder="Enter your password"
               />
             </div>
 
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="password2" className="block text-sm font-medium text-gray-700 mb-2">
                 Confirm Password
               </label>
               <input
-                id="confirmPassword"
-                name="confirmPassword"
+                id="password2"
+                name="password2"
                 type="password"
-                value={formData.confirmPassword}
+                value={formData.password2}
                 onChange={handleChange}
                 required
                 className="input-field"
