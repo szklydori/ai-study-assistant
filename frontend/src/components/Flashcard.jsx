@@ -1,15 +1,7 @@
 import { useState } from 'react'
 
-export default function Flashcard({ front, back, onReviewed }) {
+export default function Flashcard({ front, back }) {
   const [isFlipped, setIsFlipped] = useState(false)
-  const [isReviewed, setIsReviewed] = useState(false)
-
-  const handleReviewed = async () => {
-    if (!isReviewed) {
-      await onReviewed()
-      setIsReviewed(true)
-    }
-  }
 
   return (
     <div className="w-72 h-48" style={{ perspective: '1000px' }}>
@@ -23,36 +15,23 @@ export default function Flashcard({ front, back, onReviewed }) {
         }}
       >
         <div
-          className="absolute w-full h-full card p-6 flex items-center justify-center text-center"
+          className="absolute w-full h-full card p-6 flex items-start justify-center text-center overflow-y-auto"
           style={{
             backfaceVisibility: 'hidden',
             transform: 'rotateY(0deg)',
           }}
         >
-          <p className="font-medium text-gray-900">{front}</p>
+          <p className="font-medium text-gray-900 w-full">{front}</p>
         </div>
         
         <div
-          className="absolute w-full h-full card p-6 flex flex-col items-center justify-center text-center bg-gray-50"
+          className="absolute w-full h-full card p-6 flex items-start justify-center text-center bg-gray-50 overflow-y-auto"
           style={{
             backfaceVisibility: 'hidden',
             transform: 'rotateY(180deg)',
           }}
         >
-          <p className="text-gray-700 mb-4">{back}</p>
-          {!isReviewed ? (
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                handleReviewed()
-              }}
-              className="btn-secondary text-sm"
-            >
-              Mark Reviewed
-            </button>
-          ) : (
-            <span className="text-sm text-green-600 font-medium">Reviewed</span>
-          )}
+          <p className="text-gray-700 w-full">{back}</p>
         </div>
       </div>
     </div>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { getNote, summarize, generateQuiz, generateFlashcards, submitQuiz, flashcardReviewed } from '../api'
+import ReactMarkdown from 'react-markdown'
+import { getNote, summarize, generateQuiz, generateFlashcards, submitQuiz } from '../api'
 import Flashcard from '../components/Flashcard'
 
 export default function NoteDetailPage() {
@@ -9,6 +10,7 @@ export default function NoteDetailPage() {
   const [loading, setLoading] = useState(true)
   const [answers, setAnswers] = useState({})
   const [quizResult, setQuizResult] = useState(null)
+  const [submittedAnswers, setSubmittedAnswers] = useState({})
   const [processing, setProcessing] = useState({ summarize: false, quiz: false, flashcards: false })
 
   useEffect(() => {
@@ -93,8 +95,22 @@ export default function NoteDetailPage() {
       {note.summary?.content && (
         <div className="card p-8 mb-8">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Summary</h2>
-          <div className="text-gray-700 whitespace-pre-wrap leading-relaxed bg-gray-50 p-6 rounded-lg">
-            {note.summary.content}
+          <div className="prose prose-gray max-w-none bg-gray-50 p-6 rounded-lg">
+            <ReactMarkdown
+              components={{
+                h1: (props) => <h1 className="text-2xl font-bold text-gray-900 mb-4 mt-6 first:mt-0" {...props} />,
+                h2: (props) => <h2 className="text-xl font-semibold text-gray-900 mb-3 mt-5 first:mt-0" {...props} />,
+                h3: (props) => <h3 className="text-lg font-semibold text-gray-900 mb-2 mt-4 first:mt-0" {...props} />,
+                p: (props) => <p className="text-gray-700 mb-4 leading-relaxed" {...props} />,
+                ul: (props) => <ul className="list-none text-gray-700 mb-4 space-y-2" {...props} />,
+                ol: (props) => <ol className="list-none text-gray-700 mb-4 space-y-2" {...props} />,
+                li: (props) => <li className="text-gray-700" {...props} />,
+                strong: (props) => <strong className="font-semibold text-gray-900" {...props} />,
+                em: (props) => <em className="italic text-gray-800" {...props} />,
+              }}
+            >
+              {note.summary.content}
+            </ReactMarkdown>
           </div>
         </div>
       )}
@@ -103,32 +119,68 @@ export default function NoteDetailPage() {
         <div className="card p-8 mb-8">
           <h2 className="text-xl font-semibold text-gray-900 mb-6">Quiz</h2>
           <div className="space-y-6">
-            {note.quiz_questions.map(q => (
-              <div key={q.id} className="border-b border-gray-200 pb-6 last:border-0 last:pb-0">
-                <div className="font-medium text-gray-900 mb-4">{q.question}</div>
-                <div className="space-y-2">
-                  {['A', 'B', 'C', 'D'].map(k => (
-                    <label key={k} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer">
-                      <input
-                        type="radio"
-                        name={`q_${q.id}`}
-                        value={k}
-                        onChange={() => setAnswers(a => ({ ...a, [q.id]: k }))}
-                        className="w-4 h-4 text-gray-900 focus:ring-gray-900"
-                      />
-                      <span className="text-gray-700">
-                        {k}) {q[`option_${k.toLowerCase()}`] || `Answer option ${k}`}
-                      </span>
-                    </label>
-                  ))}
+            {note.quiz_questions.map(q => {
+              const userAnswer = submittedAnswers[q.id]
+              const correctAnswer = q.correct_option
+              const isAnswered = !!quizResult
+              
+              return (
+                <div key={q.id} className="border-b border-gray-200 pb-6 last:border-0 last:pb-0">
+                  <div className="font-medium text-gray-900 mb-4">{q.question}</div>
+                  <div className="space-y-2">
+                    {['A', 'B', 'C', 'D'].map(k => {
+                      const isSelected = userAnswer === k
+                      const isCorrect = k === correctAnswer
+                      const isWrong = isSelected && !isCorrect
+                      const showCorrect = isAnswered && isCorrect
+                      const showWrong = isAnswered && isWrong
+                      
+                      let bgColor = 'hover:bg-gray-50'
+                      let borderColor = ''
+                      if (showCorrect) {
+                        bgColor = 'bg-green-50 border-green-300'
+                        borderColor = 'border-2'
+                      } else if (showWrong) {
+                        bgColor = 'bg-red-50 border-red-300'
+                        borderColor = 'border-2'
+                      }
+                      
+                      return (
+                        <label 
+                          key={k} 
+                          className={`flex items-center gap-3 p-3 rounded-lg ${isAnswered ? 'cursor-default' : 'cursor-pointer'} ${bgColor} ${borderColor}`}
+                        >
+                          <input
+                            type="radio"
+                            name={`q_${q.id}`}
+                            value={k}
+                            checked={answers[q.id] === k}
+                            onChange={() => {
+                              if (!isAnswered) {
+                                setAnswers(a => ({ ...a, [q.id]: k }))
+                              }
+                            }}
+                            disabled={isAnswered}
+                            className="w-4 h-4 text-gray-900 focus:ring-gray-900 disabled:opacity-50"
+                          />
+                          <span className={`text-gray-700 ${showCorrect ? 'font-semibold text-green-800' : ''} ${showWrong ? 'font-semibold text-red-800' : ''}`}>
+                            {k}) {q[`option_${k.toLowerCase()}`] || `Answer option ${k}`}
+                            {showCorrect && ' ✓'}
+                            {showWrong && ' ✗'}
+                          </span>
+                        </label>
+                      )
+                    })}
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
             {!quizResult && (
               <button
                 onClick={async () => {
                   const result = await submitQuiz(id, answers)
                   setQuizResult(result)
+                  setSubmittedAnswers(answers)
                   setAnswers({})
                 }}
                 className="btn-primary w-full"
@@ -149,6 +201,7 @@ export default function NoteDetailPage() {
                   onClick={() => {
                     setQuizResult(null)
                     setAnswers({})
+                    setSubmittedAnswers({})
                   }}
                   className="btn-secondary"
                 >
@@ -169,7 +222,6 @@ export default function NoteDetailPage() {
                 key={idx}
                 front={c.front}
                 back={c.back}
-                onReviewed={() => flashcardReviewed(id)}
               />
             ))}
           </div>
