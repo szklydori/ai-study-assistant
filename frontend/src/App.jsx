@@ -10,8 +10,11 @@ import ProfilePage from './pages/ProfilePage'
 import Layout from './components/Layout'
 
 function App() {
+  // Get base path from environment or use default
+  const basePath = import.meta.env.BASE_URL || '/'
+  
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={basePath}>
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<HomePage />} />

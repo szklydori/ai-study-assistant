@@ -27,8 +27,11 @@ export const clearTokens = () => {
 export const isAuthenticated = () => !!getAccessToken()
 
 // Create axios instance
+// Use environment variable for API URL, fallback to localhost for development
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/'
+
 export const api = axios.create({
-  baseURL: 'http://localhost:8000/api/',
+  baseURL: API_BASE_URL,
   withCredentials: false,
   headers: { 'Content-Type': 'application/json' },
   validateStatus: s => s >= 200 && s < 300,
@@ -63,13 +66,14 @@ api.interceptors.response.use(
         const refreshToken = getRefreshToken()
         if (!refreshToken) {
           clearTokens()
-          window.location.href = '/login'
+          const basePath = import.meta.env.BASE_URL || '/'
+          window.location.href = `${basePath}login`
           return Promise.reject(error)
         }
 
         // Try to refresh the token
         const response = await axios.post(
-          'http://localhost:8000/api/auth/token/refresh/',
+          `${API_BASE_URL}auth/token/refresh/`,
           { refresh: refreshToken }
         )
 
@@ -80,9 +84,10 @@ api.interceptors.response.use(
         originalRequest.headers.Authorization = `Bearer ${access}`
         return api(originalRequest)
       } catch (refreshError) {
-        // Refresh failed, clear tokens and redirect to login
-        clearTokens()
-        window.location.href = '/login'
+          // Refresh failed, clear tokens and redirect to login
+          clearTokens()
+          const basePath = import.meta.env.BASE_URL || '/'
+          window.location.href = `${basePath}login`
         return Promise.reject(refreshError)
       }
     }
